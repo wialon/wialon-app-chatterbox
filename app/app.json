@@ -1,0 +1,63 @@
+{
+    "deprecated": true,
+    "name": "chatter_box",
+    "url_name": "chatterbox",
+    "title": "Chatterbox",
+    "description": "Chatterbox is a convenient and simple chat allowing dispatchers to communicate with drivers and send various commands to the unit.",
+    "author": {
+        "name": "",
+        "url": "http://gurtam.com"
+    },
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "https://github.com/wialon/wialon-app-chatterbox/blob/main/LICENSE-MIT"
+        }
+    ],
+    "dependencies": {
+        "jquery": "1.10.2"
+    },
+    "modules": [
+        "sdk"
+    ],
+    "params": [
+        "Active SID",
+        "Base URL",
+        "Host URL",
+        "Language",
+        "Current user"
+    ],
+    "language": [
+        "en",
+        "br",
+        "da",
+        "es",
+        "fa",
+        "fi",
+        "he",
+        "it",
+        "pl",
+        "pt",
+        "ru",
+        "sk"
+    ],
+    "docs": [],
+    "build_date": "2026-11-20",
+    "release_date": "2014-08-15",
+    "version": "1.5.5",
+    "keywords": [
+        "wialon",
+        "wialon-apps",
+        "chat",
+        "driver"
+    ],
+    "browser": {
+        "ie": "9+",
+        "opera": "10+",
+        "safari": "5+",
+        "chrome": "20+",
+        "firefox": "15+"
+    },
+    "logo": "logo.png",
+    "desc_path": "desc"
+}

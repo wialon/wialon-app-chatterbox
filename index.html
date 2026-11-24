@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<!--[if lt IE 8]><html class="ie lt-ie9 ie7"><![endif]-->
+<!--[if IE 8]><html class="ie lt-ie9 ie8"><![endif]-->
+<!--[if IE 9]><html class="ie ie9"><![endif]-->
+<!--[if !IE]><!--><html><!--<![endif]-->
+<head>
+	<meta charset="utf-8" />
+	<title></title>
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge, chrome=1, requiresActiveX=true" />
+	<meta http-equiv="pragma" content="no-cache" />
+	<meta name="description" content="" />
+	<meta name="author" content="" />
+	<meta name="HandheldFriendly" content="True" />
+	<meta name="MobileOptimized" content="640" />
+	<meta name="viewport" content="width=980,target-densitydpi=320" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+	<link rel="shortcut icon" href="./favicon.png" type="image/x-icon" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta http-equiv="cleartype" content="on" />
+	<meta http-equiv="x-dns-prefetch-control" content="on" />
+	<link rel="dns-prefetch" href="//googleapis.com" />
+	<link rel="stylesheet" href="./css/leaflet.css" />
+	<link rel="stylesheet" href="./css/base.min.css" />
+	<link rel="stylesheet" href="./css/styles.css" />
+	<script>
+		var availableLanguages=null;
+		var documentationLink=null;
+		var is_white=null;
+		var APP_CONFIG = {};
+		function loadAppConfigSync() {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", "/chatterbox/app/app.json", false);
+			xhr.send();
+			if (xhr.status === 200) {
+				try {
+					var data = JSON.parse(xhr.responseText);
+					is_white = false;
+					document.title = decodeURIComponent(data.title || "Chatterbox");
+					availableLanguages = data.language || null;
+				} catch (e) {
+					console.error("Error parsing JSON from app.json:", e);
+				}
+			}
+
+
+			xhr.open("GET", "/chatterbox/whitelabel.json", false);
+			xhr.send();
+			if (xhr.status === 200) {
+				try {
+					var data = JSON.parse(xhr.responseText);
+					if (data.hasOwnProperty('IS_WHITELABEL')) {
+						is_white = data.IS_WHITELABEL === false ? false : true;
+					}
+					if (data.hasOwnProperty('alias')) {
+						document.title = decodeURIComponent(data.alias) || "Chatterbox";
+						data.alias = document.title;
+					}
+					if (data.hasOwnProperty('help_url_link')) {
+						documentationLink = decodeURIComponent(data.help_url_link);
+						data.help_url_link = documentationLink;
+					}
+					APP_CONFIG = data;
+				} catch (e) {
+					console.error("Error parsing JSON from whitelabel.json:", e);
+				}
+			}
+		}
+		loadAppConfigSync();
+	</script>
+</head>
+<body>
+	<div id="container" class="container clearfix loads">
+		<header class="clearfix">
+			<div class="logo_text">
+				<img src="./img/logo.svg" width="33" height="33" />
+				<span class="app-name"></span>
+			</div>
+			<a id="btn-menu-items" href="#"><i class="icon-menu"></i></a>
+			<div id="btn-right-panel" class=""><a href="#"></a></div>
+			<div id="help"></div>
+		</header>
+		<aside id="items" class="items">
+			<div class="text"><input id="items-search" type="search" /></div>
+			<section id="items-section">
+				<div id="items-section-latest"></div>
+				<div id="items-section-other"></div>
+			</section>
+		</aside>
+		<aside id="resources" class="resources">
+			<div class="text"><input id="resources-search" type="search" /></div>
+			<section id="resources-section"></section>
+			<div id="map-section" class="map">
+				<a href="#" class="closed"></a>
+				<div id="map-overview" class="map-overview"></div>
+			</div>
+		</aside>
+		<main id="main" role="main">
+			<div id="msgs-section"></div>
+			<div id="splash" class="splash">
+				<div id="splash-items" class="splash-items"></div>
+			</div>
+		</main>
+	</div>
+	<script type="text/tpl" id="information-tpl">
+		<div class="information">{{text}}</div>
+	</script>
+	<script type="text/tpl" id="item-tpl">
+		<a href="#" data-id="{{id}}" title="{{name}}" draggable="false">
+			<span class="icon" data-icon="{{icon}}"></span>
+			{{shortened_name}}
+			[% if (_.isArray(coordinates) && coordinates.length > 0) { %]
+				<i></i>
+			[% } else { %]
+				[% if (_.isNumber(number) && number !== 0) { %]<i>{{number}}</i>[% } %]
+				<em></em>
+			[% } %]
+		</a>
+	</script>
+	<script type="text/tpl" id="items-tpl">
+		<h3><a href="#" draggable="false">{{typeName}}<i>0</i><em></em></a></h3>
+		<ul class="list"></ul>
+	</script>
+	<script type="text/tpl" id="msg-tpl">
+		<article class="{{type}} {{communication}}[% if (_.isNumber(flag)) {if (flag === 4) { %] alert[% } else if (flag === 5) { %] service[% }} %]">
+			<div class="communication"></div>
+			[% if (_.isString(message)) {message = _.unescape(message).replace(/\r?\n/g, '<br />').replace('script', '&nbsp;script&nbsp;')} else {message = ''} %]
+			<p class="break">{{message}}</p>
+			[% if (!_.isEmpty(geo)) { %]
+				<span style="top: 5px; position: relative;" title="{{geo}}">{{ geo }}</span>
+			[% } %]
+			<div class="info">
+				<time>{{time}}</time>
+				<a href="#" class="founded-indicator"></a>
+				[% if ((_.isString(type) && type === 'outgoing') && (_.isString(status) && status === 'not-delivered')) { %]
+					<a href="#" class="not-delivered translate" data-translate-key="Message is not delivered">&nbsp;</a>
+				[% } else { %]
+					<a href="#" class="remove"></a>
+				[% } %]
+			</div>
+		</article>
+	</script>
+	<script type="text/tpl" id="msgs-tpl">
+		<div class="title clearfix">
+			<h3 id="item-name" class="clearfix">
+				{{phones}}<span class="icon" style="background-image:url({{icon}})"></span>{{name}}
+			</h3>
+			<nav class="clearfix">
+				[% var periodObj = {yesterday: 'Yesterday', week: 'Week', month: 'Month', all: 'From beginning'} %]
+				[% _.each(periodObj, function(v, k) { %]
+					<a href="#" class="period translate" data-period="{{k}}" data-translate-key="{{v}}">&nbsp;</a>
+				[% }); %]
+				<a href="#" class="export translate" data-translate-key="Export to .xml">&nbsp;</a>
+			</nav>
+		</div>
+		<div class="chat">
+			<div class="history"></div>
+			<div id="msgs-filters" class="filters clearfix">
+				[% var filterObj = {all: 'All messages', incoming: 'Incoming', outgoing: 'Outgoing'} %]
+				[% _.each(filterObj, function(v, k) { %]
+					<a href="#" class="filter translate[% if (k === 'all') { %] active[% } %]" data-filter="{{k}}" data-translate-key="{{v}}">&nbsp;</a>
+				[% }); %]
+				<span class="text"><input id="msgs-search" type="search" /></span>
+				<span class="help"></span>
+			</div>
+			<form id="msg-form" class="form">
+				<fieldset id="msg-counter" data-content="" class="clearfix">
+					<textarea id="msg-body" class="textarea"></textarea>
+					<button id="msg-button" class="button" disabled="disabled"></button>
+				</fieldset>
+			</form>
+			<div id="msgs-controls" class="controls">
+				<p class="clearfix">
+					<em><label for="cb-submit-type" class="translate" data-translate-key="Press Enter to send">&nbsp;</label><input id="cb-submit-type" type="checkbox" /></em>
+					<a href="#" class="btn-sound"></a>
+					<span id="btn-tooltipTypeMsg" class="btn-tooltip" data-tooltip="tooltipTypeMsg">???</span>&nbsp;<i id="sms-available"></i>
+				</p>
+				<ul id="tooltipTypeMsg" class="tooltip">
+					[% var defaultMsgArray = {tcp: 'Chat', gsm: 'SMS'} %]
+					[% _.each(defaultMsgArray, function(v, k) { %]
+						<li class="translate[% if (!_.isNull(optTypeMsg) && (optTypeMsg === k)) { %] active[% } %][% if (!_.has(typeMsgArray, k)) { %] disabled[% } %]" data-type="{{k}}" data-translate-key="{{v}}">&nbsp;</li>
+					[% }); %]
+				</ul>
+			</div>
+		</div>
+	</script>
+	<script type="text/tpl" id="splash-tpl">
+		<h4 title="{{name}}">
+			<span class="icon" style="background-image:url({{icon}})"></span>
+			{{shortened_name}}
+		</h4>
+		<article class="{{type}}[% if (_.isNumber(flag) && flag === 4) { %] alert[% } %]">
+			<div class="communication {{communication}}"></div>
+			[% if (_.isString(message)) {message = _.unescape(message).replace(/\r?\n/g, '<br />').replace('script', '&nbsp;script&nbsp;')} else {message = ''} %]
+			<p class="break">{{message}}</p>
+		</article>
+	</script>
+	<script type="text/tpl" id="xml-item-tpl">
+		<msg ts="{{timestamp}}" type="[% if (_.isString(type) && type === 'incoming') { %]in[% } else { %]out[% }; %]" link="{{communication}}" flag="{{flag}}" text="{{msg}}" />
+	</script>
+	<script type="text/tpl" id="xml-items-tpl">
+		<?xml version="1.0" encoding="UTF-8"?>
+		<!--{{comments}}-->
+		<msgset name="{{name}}" phones="{{phones}}" type="{{type}}">
+			{{msgs}}
+		</msgset>
+	</script>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script>window.jQuery || document.write('<script src="./js/jquery-1.11.1.min.js"><\/script>')</script>
+	<script src="./js/leaflet.js"></script>
+	<script src="//apps.wialon.com/plugins/leaflet/webgis/webgis.leaflet.min.js"></script>
+	<script src="./js/nprogress.js"></script>
+	<!--[if IE]><script src="./js/base64.js"></script><![endif]-->
+	<script src="./js/underscore.js"></script>
+	<script src="./js/backbone.js"></script>
+	<script src="./js/app.js" defer></script>
+</body>
+</html>
